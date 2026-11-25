@@ -1,53 +1,56 @@
-# 🤖 Registro de Uso de Inteligência Artificial
+# 🤖 Uso de Inteligência Artificial
 
-Este documento descreve como a Inteligência Artificial foi utilizada como apoio técnico e como parte da solução nos exercícios realizados.
+Este documento apresenta como a inteligência artificial foi utilizada durante o desenvolvimento do projeto e como integra o funcionamento da solução.
 
----
+## 1. IA como Apoio ao Desenvolvimento
 
-# Nível 1
+O Google Gemini foi utilizado como ferramenta de apoio em atividades como:
 
-## 1. IA como apoio ao desenvolvimento
+- Consulta e interpretação de documentação técnica.
+- Apoio na implementação de funcionalidades em Python.
+- Estruturação e revisão de prompts.
+- Tratamento de respostas em formato JSON.
+- Identificação e correção de erros.
+- Pesquisa sobre integração com APIs e Function Calling.
 
-Utilizei o **Google Gemini** como apoio para:
+As sugestões geradas foram avaliadas e revisadas durante o desenvolvimento, com validação da lógica implementada.
 
-- Interpretar os requisitos;
-- Auxiliar no desenvolvimento em Python/Pandas;
-- Pesquisar sobre a API;
-- Estruturar prompts e respostas em JSON;
-- Identificar e corrigir erros.
+## 2. IA como Parte da Solução
 
-## 2. Uso da IA na solução
+A inteligência artificial também integra o fluxo de análise financeira.
 
-O Gemini foi utilizado para gerar o **parecer descritivo de PLD** a partir dos resultados calculados pelo Pandas.
+O Google Gemini é utilizado para:
 
-Os cálculos e regras de risco permaneceram no código para garantir resultados determinísticos.
+- Interpretar os resultados produzidos pelas regras determinísticas.
+- Consultar informações do cliente por meio de ferramentas disponibilizadas ao agente.
+- Identificar possíveis tipologias suspeitas.
+- Elaborar justificativas e pareceres estruturados.
+- Apoiar a comparação entre os resultados determinísticos e as análises contextuais.
 
 ## 3. Engenharia de Prompt
 
-Testei um prompt aberto e um prompt estruturado com instruções e formato JSON.
+Foram utilizadas instruções estruturadas para orientar o comportamento do modelo, definir o contexto da análise e padronizar o formato das respostas.
 
-Optei pelo prompt estruturado por gerar respostas mais objetivas, padronizadas e fáceis de utilizar no código.
+A utilização de respostas estruturadas em JSON facilita a integração com os scripts Python e a consolidação dos resultados.
 
-## 4. RAG
+## 4. Recuperação de Contexto Regulatório
 
-Utilizei RAG para fornecer ao Gemini referências das normas de PLD utilizadas no exercício, reduzindo o risco de geração de informações regulatórias incorretas.
+A solução utiliza uma abordagem simplificada de RAG, na qual referências regulatórias são recuperadas de uma base de conhecimento estruturada e inseridas no contexto enviado ao modelo.
 
----
+Essa abordagem busca fornecer referências específicas para apoiar a fundamentação dos pareceres.
 
-# Exercício 2 — Nível 2
+## 5. Limites e Supervisão Humana
 
-## 1. IA como apoio técnico
+A inteligência artificial é utilizada como ferramenta de apoio à investigação, não como responsável exclusiva pela determinação de irregularidades.
 
-Utilizei a IA para pesquisar a documentação da `google-genai`, resolver dúvidas de implementação e auxiliar na otimização do processamento.
+Os resultados gerados podem apresentar inconsistências ou interpretações inadequadas e precisam ser revisados.
 
-## 2. Processamento paralelo
+As classificações produzidas não substituem análises especializadas, procedimentos internos de compliance ou decisões formais das instituições financeiras.
 
-Utilizei `ThreadPoolExecutor` para processar os clientes em paralelo.
+A solução não realiza comunicação automática de operações ao COAF.
 
-A mudança reduziu o tempo do lote de 10 clientes para aproximadamente **17 a 19 segundos**.
+## 6. Considerações Finais
 
-## 3. Function Calling
+O uso de IA no projeto busca explorar a integração entre processamento determinístico, investigação contextual e automação de análises.
 
-O Gemini foi configurado para utilizar **Function Calling (*tools*)**, permitindo consultar informações do cliente conforme a necessidade durante a investigação.
-
-> **Observação:** A IA foi utilizada como ferramenta de apoio, pesquisa e desenvolvimento. As regras de negócio e decisões técnicas foram revisadas durante a implementação.
+A separação entre os cálculos realizados em Python e a interpretação realizada pelo modelo contribui para manter maior controle sobre as regras de negócio e a rastreabilidade dos resultados.
