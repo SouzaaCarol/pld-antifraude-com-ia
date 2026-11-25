@@ -1,83 +1,167 @@
-# 🛡️ Desafio Técnico - Prevenção à Lavagem de Dinheiro (PLD) | Níveis 1 e 2
+# 🛡️ Análise Inteligente de Transações Financeiras | PLD e Antifraude
 
-Este repositório contém a solução desenvolvida para o desafio técnico de **Prevenção à Lavagem de Dinheiro (PLD)** e **Antifraude**.
+Projeto desenvolvido em Python para automatizar a análise de transações financeiras e apoiar a identificação de possíveis indícios de lavagem de dinheiro e comportamentos atípicos.
 
-O objetivo do projeto é estruturar uma esteira automatizada de análise de transações financeiras, combinando **regras determinísticas de compliance (Pandas)** com a capacidade analítica e investigativa de **Agentes de IA (Google Gemini)**.
+A solução combina processamento determinístico de dados com inteligência artificial generativa, utilizando Pandas para aplicação de regras de negócio e agentes baseados em Google Gemini para investigação e geração de pareceres.
 
-## 🎯 O Desafio de Negócio & Arquitetura da Solução
+O objetivo é explorar como diferentes abordagens podem trabalhar em conjunto para tornar as análises financeiras mais estruturadas, rastreáveis e eficientes.
 
-Em um ambiente bancário, a análise de PLD exige alta precisão em cálculos matemáticos para cumprir a regulação do Banco Central e do COAF, aliada à capacidade de investigar o contexto comportamental do cliente sem criar gargalos operacionais.
+## 🎯 Contexto e Objetivo
 
-Para atender a esses requisitos, a solução foi dividida em duas camadas principais:
+Em ambientes financeiros, a identificação de operações suspeitas exige mais do que a análise isolada de transações. É necessário considerar padrões de movimentação, histórico dos clientes, comportamento financeiro e critérios regulatórios.
 
-### 1. Nível 1: Camada Determinística e RAG Regulatório
+Nesse contexto, o projeto foi estruturado para combinar duas abordagens complementares:
 
-* **Processamento com Pandas:** Operações de limpeza de dados, conversão cambial e aplicação de regras de negócio estritas (como a detecção de *smurfing*/fracionamento e operações atípicas acima da mediana do cliente).
-* **Fundamentação por RAG:** Injeção de trechos das normativas (Circular BACEN nº 3.978/2020 e Carta Circular nº 4.001/2020) diretamente no prompt da LLM para garantir que o parecer técnico seja emitido com respaldo legal real e sem alucinações.
+- **Análise determinística:** aplicação de regras de negócio e cálculos estatísticos para identificar movimentações atípicas.
+- **Análise com IA generativa:** investigação contextual das ocorrências, considerando informações adicionais do cliente e referências regulatórias.
 
-### 2. Nível 2: Escala com Agentes e Function Calling
+## 🏗️ Arquitetura da Solução
 
-* **Investigação Autônoma com** ***Tools*****:** O agente utiliza chamadas nativas de função em `nivel_2/tools.py` para consultar autonomamente apenas as informações necessárias (histórico, canais mais utilizados e perfil de risco do cliente).
-* **Otimização de Lote com Paralelismo:** Para evitar gargalos de tempo no processamento do lote de 10 clientes, o fluxo foi reestruturado com `ThreadPoolExecutor`. Isso reduziu o tempo total de resposta da análise de minutos para apenas **~17 a 19 segundos**.
-* **Motor de Confronto e Auditoria:** O script `nivel_2/confronto.py` cruza as marcações das regras determinísticas com as decisões finais geradas pelo Agente de IA, exportando os artefatos estruturados para conciliação em `outputs/`.
+### 1. Processamento de Dados e Fundamentação Regulatória
+
+A primeira etapa concentra o processamento estruturado das transações utilizando Pandas.
+
+Principais operações:
+
+- Limpeza e preparação dos dados.
+- Conversão cambial.
+- Identificação de possíveis operações de fracionamento (*smurfing*).
+- Detecção de movimentações atípicas considerando o histórico e a mediana do cliente.
+- Fundamentação dos pareceres com referências regulatórias por meio de uma abordagem de RAG.
+
+As referências utilizadas incluem a Circular BACEN nº 3.978/2020 e a Carta Circular nº 4.001/2020.
+
+### 2. Investigação com Agentes de IA e Function Calling
+
+Na segunda etapa, foi desenvolvido um agente utilizando Google Gemini e Function Calling para investigar os clientes sinalizados.
+
+O agente utiliza ferramentas específicas para consultar informações como:
+
+- Histórico de transações.
+- Canais de movimentação mais utilizados.
+- Perfil de risco do cliente.
+
+Para otimizar o processamento de múltiplas análises, foi utilizado `ThreadPoolExecutor`, permitindo a execução concorrente das investigações.
+
+Em um lote de 10 clientes, o processamento apresentou tempo de execução aproximado de 17 a 19 segundos no ambiente utilizado.
+
+### 3. Conciliação e Validação das Análises
+
+Após as investigações, os resultados são consolidados por meio de um processo de confronto entre as sinalizações das regras determinísticas e os pareceres gerados pelo agente.
+
+Essa etapa permite comparar as duas abordagens e organizar os resultados em arquivos estruturados nos formatos CSV e JSON.
+
+## 🛠️ Tecnologias Utilizadas
+
+| Tecnologia | Aplicação |
+|---|---|
+| Python 3.10+ | Desenvolvimento da solução |
+| Pandas | Tratamento e análise de dados |
+| Google Gemini | Análise contextual com IA generativa |
+| Function Calling | Consulta estruturada de informações |
+| ThreadPoolExecutor | Processamento concorrente |
+| RAG | Fundamentação com referências regulatórias |
+| JSON e CSV | Estruturação e exportação dos resultados |
+| python-dotenv | Gerenciamento de variáveis de ambiente |
 
 ## 📂 Estrutura do Repositório
 
 ```text
-.
-├── ENTREGA.yaml          # Autodeclaração e status dos entregáveis do teste
-├── .env.example          # Modelo de variável de ambiente (chave Gemini API)
+pld-antifraude-com-ia/
+│
+├── .env.example
+├── requirements.txt
+│
+├── dados/
+│
 ├── docs/
-│   ├── DECISOES.md       # Trade-offs, limitações reais da solução e plano do Nível 3
-│   └── USO_DE_IA.md      # Governança de IA, escopo de atuação e supervisão humana
+│   ├── DECISOES.md
+│   └── USO_DE_IA.md
+│
 ├── nivel_1/
-│   └── nivel_1.ipynb     # Pipeline determinística (Pandas) e RAG regulatório
+│   └── nivel_1.ipynb
+│
 ├── nivel_2/
-│   ├── agente.py         # Agente LLM em lote rodando investigações em paralelo
-│   ├── tools.py          # Ferramentas de consulta (histórico, canal e perfil)
-│   └── confronto.py      # Motor de conciliação entre regras e parecer do agente
-└── outputs/              # Relatórios de conciliação e métricas gerados (CSV/JSON)
+│   ├── agente.py
+│   ├── tools.py
+│   └── confronto.py
+│
+└── outputs/
 ```
-
-## 🛠️ Tecnologias Utilizadas
-
-* **Linguagem:** Python 3.10+
-* **Engenharia e Tratamento de Dados:** Pandas
-* **Modelo de Linguagem:** Google Gemini (`gemini-3.6-flash`) via SDK `google-genai`
-* **Concorrência:** `concurrent.futures.ThreadPoolExecutor`
-* **Integração e Formatos:** JSON, CSV, YAML e `python-dotenv`
 
 ## 🚀 Como Executar o Projeto
 
-### 1. Clonar e Ativar Ambiente
+### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/SouzaaCarol/teste-tecnico-banco.git
-cd teste-tecnico-banco
+git clone https://github.com/SouzaaCarol/pld-antifraude-com-ia.git
+cd pld-antifraude-com-ia
+```
+
+### 2. Criar e ativar o ambiente virtual
+
+```bash
 python -m venv venv
-source venv/bin/activate  # Ou .\venv\Scripts\Activate.ps1 no Windows
 ```
 
-### 2. Instalar Dependências e Configurar Chave
+No Windows:
 
 ```bash
-pip install pandas google-genai python-dotenv jupyter
+.\venv\Scripts\Activate.ps1
 ```
 
-Crie o arquivo `.env` na raiz contendo:
+No Linux ou macOS:
+
+```bash
+source venv/bin/activate
+```
+
+### 3. Instalar as dependências
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configurar a chave da API
+
+Crie um arquivo `.env` na raiz do projeto, utilizando o `.env.example` como referência.
+
+Adicione sua chave de API:
 
 ```env
 GEMINI_API_KEY=sua_chave_aqui
 ```
 
-### 3. Rodar os Níveis
+### 5. Executar a solução
 
-* **Nível 1:** Abra e execute o notebook em `nivel_1/nivel_1.ipynb`.
-* **Nível 2 (Agente):** Execute `python nivel_2/agente.py` para gerar a análise do lote.
-* **Nível 2 (Confronto):** Execute `python nivel_2/confronto.py` para consolidar o relatório de conciliação.
+**Processamento determinístico e RAG:**
+
+Abra e execute o notebook `nivel_1/nivel_1.ipynb`.
+
+**Investigação com agente de IA:**
+
+```bash
+python nivel_2/agente.py
+```
+
+**Conciliação dos resultados:**
+
+```bash
+python nivel_2/confronto.py
+```
+
+## 🔎 Considerações sobre o Projeto
+
+A solução explora a integração entre regras determinísticas e inteligência artificial generativa em um cenário de prevenção à lavagem de dinheiro.
+
+As análises produzidas pela IA devem ser consideradas apoio à investigação, não substituindo a validação humana ou os processos formais de compliance.
+
+A implementação atual contempla o processamento determinístico, a investigação com agente de IA e a conciliação dos resultados.
+
+Como possibilidade de evolução, está prevista a exploração de uma arquitetura multiagente, com agentes especializados em diferentes etapas da investigação e elaboração dos pareceres.
 
 ## 👩‍💻 Autora
 
 **Ana Carolina Martins Souza**
 
-Projeto desenvolvido como solução do desafio técnico para a área de **PLD, Antifraude, Dados e Inteligência Artificial**.
+Projeto desenvolvido com foco em Python, análise de dados, automação de processos e aplicações de inteligência artificial no contexto financeiro.
