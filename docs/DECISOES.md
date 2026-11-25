@@ -1,98 +1,112 @@
-# 📝 Registro de Decisões Técnicas
+# 📝 Decisões Técnicas e Arquiteturais
 
-Este documento reúne as principais decisões tomadas durante o desenvolvimento dos exercícios do desafio de Prevenção à Lavagem de Dinheiro (PLD).
+Este documento apresenta as principais decisões técnicas adotadas no desenvolvimento da solução, incluindo escolhas de processamento, integração com inteligência artificial e limitações identificadas.
 
----
+## 1. Tratamento e Preparação dos Dados
 
-# Nível 1
+**Decisão:** Utilizar Pandas para limpeza, transformação e preparação das transações.
 
-## 1. Limpeza e Tratamento dos Dados
+Principais decisões:
 
-* **Datas Nulas:** Optei por remover linhas sem data informada (`dropna`), pois as regras que analisam movimentações no mesmo dia dependem de uma marcação temporal correta.
-* **Conversão de Moeda:** As transações em `USD` foram convertidas para `BRL` utilizando a taxa definida no arquivo de configuração, mantendo os cálculos dos limites em uma única moeda.
-* **Padronização de Tipos:** As datas foram convertidas para `datetime` utilizando Pandas, facilitando a ordenação e os agrupamentos por dia.
+- **Datas nulas:** remoção de registros sem data, pois a identificação de movimentações no mesmo dia depende de uma referência temporal válida. Esses registros devem ser contabilizados como dados descartados para não perder rastreabilidade.
+- **Conversão de moeda:** normalização das transações em USD para BRL utilizando a taxa de câmbio definida nos dados.
+- **Padronização:** conversão das datas para o formato datetime, permitindo agrupamentos e ordenações temporais.
 
-## 2. Pandas vs. IA Generativa
+**Justificativa:** Manter os dados em formatos consistentes antes da aplicação das regras de negócio.
 
-**Decisão:** Os cálculos foram realizados no Python/Pandas e a IA foi utilizada apenas para gerar o parecer.
+## 2. Processamento Determinístico vs. IA Generativa
 
-**Por quê:** Regras como soma de transações, quantidade de operações e identificação de valores atípicos precisam ser determinísticas e fáceis de verificar.
+**Decisão:** Manter os cálculos e a identificação das regras no Python/Pandas, utilizando a IA para apoiar a interpretação dos resultados e a elaboração dos pareceres.
 
-O Gemini recebe os resultados já processados e utiliza essas informações para gerar o parecer descritivo, indicando o risco e as possíveis *red flags*.
+**Justificativa:** Operações matemáticas e critérios de sinalização precisam ser reproduzíveis e verificáveis. A IA não deve ser responsável por calcular valores ou determinar sozinha a aplicação das regras.
 
-## 3. Regras Determinísticas
+Essa separação também facilita a validação dos resultados.
 
-Foram implementadas regras simples para identificar comportamentos que merecem atenção:
+## 3. Regras de Detecção
 
-* **Fracionamento (*Smurfing*):** Identifica 3 ou mais movimentações no mesmo dia que, juntas, ultrapassam R$ 50.000,00, com valores individuais menores que R$ 20.000,00.
-* **Valor Atípico:** Identifica transações que ultrapassam 5 vezes a mediana histórica do cliente, considerando clientes com pelo menos 4 transações no histórico.
+Foram implementadas duas regras principais:
 
-A escolha por regras determinísticas permite que os critérios sejam reproduzidos e verificados sem depender da interpretação da IA.
+- **Possível fracionamento (Smurfing):** identificação de três ou mais movimentações no mesmo dia, com soma superior a R$ 50.000,00 e valores individuais inferiores a R$ 20.000,00.
+- **Valor atípico:** identificação de transações superiores a cinco vezes a mediana histórica do cliente, considerando pelo menos quatro operações.
 
-## 4. Uso de RAG
+Os limites são parâmetros definidos para a lógica de análise deste projeto e não devem ser interpretados isoladamente como limites legais de comunicação.
 
-**Decisão:** Utilizei RAG para fornecer referências regulatórias ao Gemini durante a geração do parecer.
+## 4. Recuperação de Referências Regulatórias (RAG)
 
-A base contém referências à **Circular BACEN nº 3.978/2020** e à **Carta Circular nº 4.001/2020**.
+**Decisão:** Utilizar uma base de conhecimento estruturada em Python para fornecer referências regulatórias relacionadas às regras identificadas.
 
-Quando uma regra é identificada, o sistema busca a referência correspondente e envia essa informação para a IA junto com os dados da análise.
+O fluxo funciona da seguinte forma:
 
-**Por quê:** A ideia foi reduzir o risco de a IA criar ou citar incorretamente uma norma, fornecendo a fonte diretamente no contexto da geração do parecer.
+1. O processamento determinístico identifica a ocorrência.
+2. O sistema recupera a referência correspondente na base de conhecimento.
+3. O contexto regulatório é inserido no prompt enviado ao Gemini.
+4. O modelo utiliza os dados processados e a referência fornecida para elaborar o parecer.
 
----
+As referências consideradas incluem a Circular BACEN nº 3.978/2020 e a Carta Circular nº 4.001/2020.
 
-# Níveis 2 e 3
+**Justificativa:** Fornecer contexto regulatório específico durante a geração do parecer, reduzindo a dependência de conhecimento exclusivamente gerado pelo modelo.
 
-## 1. Processamento paralelo vs. sequencial
+**Limitação:** A recuperação atual utiliza associação baseada nas regras identificadas e uma base estática em memória. Não há busca vetorial ou indexação semântica de documentos.
 
-**Decisão:** Utilizei `ThreadPoolExecutor` para processar os clientes em paralelo.
+## 5. Function Calling e Investigação Contextual
 
-**Por quê:** O processamento sequencial demorava muito e poderia ultrapassar o tempo disponível para execução. Com as chamadas paralelas, o lote de 10 clientes passou a ser processado em aproximadamente **17 a 19 segundos**.
+**Decisão:** Utilizar Function Calling para permitir que o agente consulte informações específicas dos clientes durante a investigação.
 
-**Trade-off:** A execução fica mais rápida, mas adiciona complexidade relacionada à concorrência e ao acesso simultâneo a recursos.
+Foram disponibilizadas ferramentas para consultar:
 
-**Com mais tempo:** Melhoraria o tratamento de erros e estudaria uma abordagem assíncrona com controle de tentativas (*retry*) e limites de chamadas.
+- Histórico de transações.
+- Operações realizadas em uma data específica.
+- Distribuição de movimentações por canal.
 
-## 2. Cálculos no Python vs. IA
+**Justificativa:** Evitar o envio indiscriminado de todas as informações ao modelo e permitir consultas direcionadas conforme a necessidade da análise.
 
-**Decisão:** Mantive os cálculos e regras no Python/Pandas, deixando a IA responsável pela geração do parecer.
+**Trade-off:** A abordagem exige controle das funções disponíveis e tratamento adequado das respostas e falhas de execução.
 
-**Por quê:** Essa abordagem mantém os resultados determinísticos e mais fáceis de verificar, evitando depender da IA para cálculos numéricos.
+## 6. Processamento Concorrente
 
-## 3. Tools vs. envio de todos os dados
+**Decisão:** Utilizar `ThreadPoolExecutor` para executar investigações de diferentes clientes em paralelo.
 
-**Decisão:** No Nível 2, utilizei *tools* para que a IA pudesse consultar os dados do cliente conforme a necessidade.
+O processamento foi configurado com até cinco workers simultâneos.
 
-**Por quê:** Achei mais organizado e eficiente do que enviar todo o conjunto de dados para o modelo de uma vez. A IA consulta apenas as informações necessárias para aquela investigação.
+**Justificativa:** Como as investigações dependem de chamadas externas à API, o processamento concorrente permite aproveitar os períodos de espera e reduzir o tempo total de execução.
 
-**Trade-off:** A solução fica um pouco mais complexa, pois é necessário criar e controlar as funções disponíveis para a IA.
+**Trade-off:** A concorrência exige atenção ao controle de erros, limites de requisição e acesso compartilhado aos recursos.
 
-## 4. Escolha da Trilha A no Nível 3
+## 7. Conciliação das Análises
 
-**Decisão:** Escolhi a **Trilha A — Fluxo multiagente**, com os papéis de **Triador, Investigador e Redator**.
+**Decisão:** Comparar as sinalizações determinísticas com as classificações e justificativas produzidas pelo agente.
 
-**Por quê:** Achei essa abordagem interessante porque permite dividir a investigação em etapas e automatizar melhor o processo.
+A etapa consolida informações como:
 
-A ideia seria:
+- Volume financeiro.
+- Regras acionadas.
+- Nível de risco atribuído pelo agente.
+- Tipologia suspeita.
+- Justificativa da análise.
 
-`Triador → Investigador → Redator → Finalização`
+Os resultados são exportados em CSV e JSON.
 
-O Triador decidiria se o caso precisa continuar, o Investigador utilizaria as *tools* do Nível 2 e o Redator produziria o parecer final.
+**Justificativa:** Facilitar a identificação de concordâncias e divergências entre as abordagens.
 
-**Limitação:** Não consegui implementar o Nível 3 devido ao tempo disponível para realizar o desafio, principalmente por conciliar o desenvolvimento com meu trabalho presencial. Por isso, a Trilha A ficou como a arquitetura planejada para uma próxima etapa.
+**Limitação:** A comparação não representa uma medição de precisão ou redução de falsos positivos, pois não existe uma base de referência previamente validada.
 
-**Com mais tempo:** Implementaria o fluxo com um estado compartilhado entre os agentes e uma condição de parada, validando cada etapa com casos de teste.
+## 8. Limitações e Possibilidades de Evolução
 
-## 5. Limitações de Escalabilidade
+A implementação atual utiliza arquivos locais e mantém os dados em memória.
 
-A solução atual mantém os dados em memória e utiliza arquivos locais. Isso é suficiente para o volume utilizado no desafio, mas poderia gerar problemas com uma quantidade muito maior de clientes.
+Como possibilidades de evolução, foram identificadas:
 
-**Com mais tempo:** Utilizaria um banco de dados para consultar os dados sob demanda e melhoraria o controle de acesso aos arquivos durante o processamento paralelo.
+- Persistência dos dados em banco de dados.
+- Recuperação semântica de documentos regulatórios.
+- Tratamento de erros e novas tentativas de chamadas à API.
+- Controle de limites de requisição.
+- Testes automatizados das regras de negócio.
+- Implementação de uma arquitetura multiagente com agentes especializados em triagem, investigação e elaboração de pareceres.
 
----
+A arquitetura multiagente é uma proposta de evolução, não uma funcionalidade implementada na versão atual.
 
 ## Considerações Finais
 
-As decisões buscaram equilibrar **simplicidade, tempo de execução e confiabilidade**, considerando o escopo e o tempo disponível para cada exercício.
+As decisões arquiteturais buscaram equilibrar confiabilidade dos cálculos, flexibilidade na investigação e eficiência no processamento.
 
-No Nível 1, o foco foi garantir regras determinísticas e um parecer com referências regulatórias. No segundo exercício, o foco foi explorar o uso de **IA com ferramentas e processamento paralelo**, deixando como próximo passo a implementação do fluxo multiagente da **Trilha A**.
+A separação entre regras determinísticas e IA generativa permite combinar resultados reproduzíveis com análise contextual, mantendo a necessidade de validação humana nas decisões relacionadas a compliance.
